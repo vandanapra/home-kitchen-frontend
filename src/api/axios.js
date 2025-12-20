@@ -11,7 +11,7 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   // OTP / LOGIN APIs ke liye token mat bhejo
   if (
-    config.url.includes("send-otp") ||
+    config.url.includes("send-otp-whatsapp") ||
     config.url.includes("verify-otp")
   ) {
     delete config.headers.Authorization;
