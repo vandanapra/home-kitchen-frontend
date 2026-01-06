@@ -1,7 +1,16 @@
 import { useState } from "react";
+
 import api from "../../api/axios";
+import { useNavigate } from "react-router-dom";
+
+const DAYS = [
+  "MONDAY","TUESDAY","WEDNESDAY",
+  "THURSDAY","FRIDAY","SATURDAY","SUNDAY"
+];
 
 export default function SellerMenuManage() {
+  const navigate = useNavigate(); // 🔥 added
+  const [day, setDay] = useState(DAYS[0]);
   const [items, setItems] = useState([
     { name: "", description: "", price: "" }
   ]);
@@ -19,7 +28,7 @@ export default function SellerMenuManage() {
 
   const submitMenu = async () => {
     try {
-      await api.put("/seller/menu/", { items });
+      await api.put("/seller/menu/", { day, items });
       setMessage("Menu saved successfully");
     } catch {
       setMessage("Failed to save menu");
@@ -28,9 +37,25 @@ export default function SellerMenuManage() {
 
   return (
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded">
-      <h2 className="text-xl font-bold mb-4">📝 Manage Today’s Menu</h2>
+      {/* 🔙 BACK BUTTON */}
+      <button
+        onClick={() => navigate("/seller/dashboard")}
+        className="text-blue-600 mb-4 hover:underline"
+      >
+        ← Back to Dashboard
+      </button>
+      
+      <h2 className="text-xl font-bold mb-4">📝 Manage Menu</h2>
 
-      {message && <p className="mb-3">{message}</p>}
+      <select
+        value={day}
+        onChange={(e) => setDay(e.target.value)}
+        className="border p-2 mb-4 w-full"
+      >
+        {DAYS.map(d => (
+          <option key={d} value={d}>{d}</option>
+        ))}
+      </select>
 
       {items.map((item, i) => (
         <div key={i} className="border p-3 mb-3 rounded">
@@ -58,13 +83,18 @@ export default function SellerMenuManage() {
         </div>
       ))}
 
-      <button onClick={addItem} className="mr-2">
+      <button onClick={addItem} className="mr-3">
         + Add Item
       </button>
 
-      <button onClick={submitMenu} className="bg-black text-white px-4 py-2 rounded">
+      <button
+        onClick={submitMenu}
+        className="bg-black text-white px-4 py-2 rounded"
+      >
         Save Menu
       </button>
+
+      {message && <p className="mt-3">{message}</p>}
     </div>
   );
 }

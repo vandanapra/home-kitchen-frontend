@@ -49,7 +49,7 @@ export default function SellerProfile() {
       setMessage("Kitchen profile saved successfully");
 
       // Optional redirect
-      setTimeout(() => navigate("/dashboard"), 1500);
+      setTimeout(() => navigate("/seller/dashboard"), 1500);
     } catch (err) {
       alert("Failed to save kitchen profile");
     } finally {
