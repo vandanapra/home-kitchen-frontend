@@ -29,6 +29,12 @@ export default function CustomerHome() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <button
+  onClick={() => navigate("/my-orders")}
+  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded"
+>
+  My Orders
+</button>
       <h2 className="text-2xl font-bold mb-6">
         🍽️ Available Home Kitchens
       </h2>
@@ -63,7 +69,6 @@ export default function CustomerHome() {
 
             {/* 🔥 DYNAMIC VIEW MENU */}
             <button
-              // onClick={() => navigate(`/menu/${seller.id}`)}
               onClick={() => navigate(`/menu/${seller.seller_id}`)}
               className="mt-4 bg-black text-white px-4 py-2 rounded"
             >

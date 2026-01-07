@@ -86,7 +86,7 @@ export default function SellerDashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
           <h1 className="text-xl font-bold">
-            🍛 Home Kitchen
+            🍛 Seller Dashboard
           </h1>
 
           {/* 🔥 RESTORED ACTION BUTTONS */}
@@ -110,6 +110,12 @@ export default function SellerDashboard() {
               className="bg-black text-white px-3 py-2 rounded"
             >
               Manage Menu
+            </button>
+            <button
+              onClick={() => navigate("/seller/orders")}
+              className="text-blue-600 hover:underline"
+            >
+              View Orders →
             </button>
 
             <button

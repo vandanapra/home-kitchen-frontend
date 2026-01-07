@@ -27,9 +27,6 @@ export default function CustomerMenu() {
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
 
-  // useEffect(() => {
-  //   fetchMenu();
-  // }, [sellerId]);
   useEffect(() => {
     fetchMenu(selectedDay);
   }, [sellerId, selectedDay]);
@@ -168,6 +165,7 @@ export default function CustomerMenu() {
         <Cart
           cart={cart}
           sellerId={sellerId}
+          day={selectedDay}  
           updateQty={updateQty}
           removeFromCart={removeFromCart}
         />
