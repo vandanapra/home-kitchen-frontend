@@ -5,10 +5,10 @@ import App from "./App";
 import "./index.css"; // 🔴 THIS IS VERY IMPORTANT
 import { Toaster } from "react-hot-toast";
 
-<Toaster position="top-right" />
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <App />
+    <Toaster position="top-right" />
   </BrowserRouter>
 );
