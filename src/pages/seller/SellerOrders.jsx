@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import { useNavigate } from "react-router-dom";
 
 export default function SellerOrders() {
+  const navigate = useNavigate(); // 🔥 added
   const [orders, setOrders] = useState([]);
   const [date, setDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -53,6 +55,12 @@ export default function SellerOrders() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <button
+        onClick={() => navigate("/seller/dashboard")}
+        className="text-blue-600 mb-4 hover:underline"
+      >
+        ← Back to Dashboard
+      </button>
       <h2 className="text-2xl font-bold mb-6">
         📦 Orders Received
       </h2>

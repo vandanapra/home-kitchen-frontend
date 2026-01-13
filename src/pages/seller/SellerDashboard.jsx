@@ -1,15 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 
+/* ================= CONSTANTS ================= */
 const DAYS = [
-  "MONDAY","TUESDAY","WEDNESDAY",
-  "THURSDAY","FRIDAY","SATURDAY","SUNDAY"
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
 ];
 
 export default function SellerDashboard() {
   const navigate = useNavigate();
 
+  /* ================= AUDIO ================= */
+  const audioRef = useRef(null);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/notification.mp3.wav");
+    audioRef.current.volume = 1;
+  }, []);
+
+  const enableSound = () => {
+    audioRef.current
+      .play()
+      .then(() => {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setSoundEnabled(true);
+      })
+      .catch(() => {});
+  };
+
+  /* ================= SELLER ================= */
+  const [sellerId, setSellerId] = useState(null);
+
+  useEffect(() => {
+    api.get("/auth/profile/")
+      .then(res => {
+        setSellerId(res.data.seller_profile.id);
+      })
+      .catch(() => {});
+  }, []);
+
+  /* ================= MENU ================= */
   const today = new Date()
     .toLocaleDateString("en-US", { weekday: "long" })
     .toUpperCase();
@@ -19,23 +57,10 @@ export default function SellerDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [message, setMessage] = useState("");
 
-  /* ================= LOGOUT ================= */
-  const handleLogout = () => {
-    localStorage.removeItem("access");
-    localStorage.removeItem("refresh");
-    navigate("/login");
-  };
-
-  /* ================= FETCH MENU ================= */
   const fetchMenu = async (day) => {
     try {
       const res = await api.get(`/seller/menu/?day=${day}`);
-
-      if (res.data && res.data.items) {
-        setItems(res.data.items);
-      } else {
-        setItems([]);
-      }
+      setItems(res.data?.items || []);
     } catch {
       setItems([]);
     }
@@ -45,7 +70,6 @@ export default function SellerDashboard() {
     fetchMenu(selectedDay);
   }, [selectedDay]);
 
-  /* ================= EDIT ================= */
   const handleChange = (i, e) => {
     const updated = [...items];
     updated[i][e.target.name] = e.target.value;
@@ -66,7 +90,6 @@ export default function SellerDashboard() {
     }
   };
 
-  /* ================= DELETE ================= */
   const deleteItem = async (id) => {
     if (!window.confirm("Delete this item?")) return;
 
@@ -78,31 +101,79 @@ export default function SellerDashboard() {
     }
   };
 
+  /* ================= ORDERS (POLLING) ================= */
+  const [orders, setOrders] = useState([]);
+  const [newOrderCount, setNewOrderCount] = useState(0);
+  const lastOrderId = useRef(null);
+
+  const fetchOrders = async () => {
+    try {
+      const res = await api.get("/orders/seller/");
+      const data = res.data || [];
+
+      if (data.length > 0) {
+        if (
+          lastOrderId.current &&
+          data[0].id !== lastOrderId.current
+        ) {
+          setNewOrderCount(c => c + 1);
+
+          if (soundEnabled && audioRef.current) {
+            audioRef.current.currentTime = 0;
+            audioRef.current.play().catch(() => {});
+          }
+
+          alert(
+            `🛎️ New Order!\nCustomer: ${data[0].customer_name}\n₹${data[0].total_amount}\n${data[0].day} (${data[0].order_date})`
+          );
+        }
+        lastOrderId.current = data[0].id;
+      }
+
+      setOrders(data);
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000);
+    return () => clearInterval(interval);
+  }, [soundEnabled]);
+
+  /* ================= LOGOUT ================= */
+  const handleLogout = () => {
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
+    navigate("/login");
+  };
+
+  /* ================= UI ================= */
   return (
     <div className="min-h-screen bg-gray-100">
 
-      {/* ================= TOP HEADER ================= */}
+      {/* ================= HEADER ================= */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-
           <h1 className="text-xl font-bold">
             🍛 Seller Dashboard
           </h1>
 
-          {/* 🔥 RESTORED ACTION BUTTONS */}
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/profile")}
-              className="text-sm text-blue-600 hover:underline"
-            >
+            {!soundEnabled && (
+              <button
+                onClick={enableSound}
+                className="bg-yellow-500 text-white px-3 py-1 rounded"
+              >
+                Enable Sound 🔔
+              </button>
+            )}
+
+            <button onClick={() => navigate("/profile")} className="text-blue-600">
               Edit Profile →
             </button>
 
-            <button
-              onClick={() => navigate("/seller-profile")}
-              className="text-sm text-green-600 hover:underline"
-            >
-              My Kitchen
+            <button onClick={() => navigate("/seller-profile")} className="text-green-600">
+              My Kitchen →
             </button>
 
             <button
@@ -111,29 +182,33 @@ export default function SellerDashboard() {
             >
               Manage Menu
             </button>
+
             <button
               onClick={() => navigate("/seller/orders")}
-              className="text-blue-600 hover:underline"
+              className="relative text-blue-600"
             >
               View Orders →
+              {newOrderCount > 0 && (
+                <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs px-2 rounded-full">
+                  {newOrderCount}
+                </span>
+              )}
             </button>
 
             <button
               onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600 text-sm"
+              className="bg-red-500 text-white px-4 py-1 rounded"
             >
               Logout
             </button>
           </div>
-
         </div>
       </header>
 
-      {/* ================= DASHBOARD ================= */}
+      {/* ================= MENU ================= */}
       <div className="p-6">
         <div className="bg-white p-6 rounded-xl shadow max-w-4xl mx-auto">
 
-          {/* DAY SELECT */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
               🍱 Menu for {selectedDay}
@@ -144,10 +219,8 @@ export default function SellerDashboard() {
               onChange={(e) => setSelectedDay(e.target.value)}
               className="border p-2 rounded"
             >
-              {DAYS.map(day => (
-                <option key={day} value={day}>
-                  {day}
-                </option>
+              {DAYS.map(d => (
+                <option key={d} value={d}>{d}</option>
               ))}
             </select>
           </div>
@@ -175,16 +248,13 @@ export default function SellerDashboard() {
             >
               <div>
                 <h4 className="font-semibold">{item.name}</h4>
-                <p className="text-sm text-gray-600">
-                  {item.description}
-                </p>
+                <p className="text-sm text-gray-600">{item.description}</p>
                 <p className="font-bold">₹{item.price}</p>
               </div>
 
               <button
                 onClick={() => deleteItem(item.id)}
                 className="text-red-600 text-xl"
-                title="Delete item"
               >
                 ❌
               </button>
@@ -225,9 +295,7 @@ export default function SellerDashboard() {
           )}
 
           {message && (
-            <p className="mt-3 text-green-600">
-              {message}
-            </p>
+            <p className="mt-3 text-green-600">{message}</p>
           )}
         </div>
       </div>
