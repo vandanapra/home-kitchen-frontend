@@ -111,6 +111,7 @@
 //     </div>
 //   );
 // }
+import React from "react";
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -191,7 +192,7 @@ export default function Login() {
         <h1 className="text-2xl font-bold text-center mb-2">
           🍛 Home Kitchen
         </h1>
-        <p className="text-center text-gray-500 mb-6">
+        <p className="text-center text-red-500 mb-6">
           Login with OTP
         </p>
 

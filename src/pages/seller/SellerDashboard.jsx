@@ -1,3 +1,5 @@
+import React from "react";
+
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
@@ -144,7 +146,7 @@ export default function SellerDashboard() {
   const handleLogout = () => {
     localStorage.removeItem("access");
     localStorage.removeItem("refresh");
-    navigate("/login");
+    navigate("/");
   };
 
   /* ================= UI ================= */

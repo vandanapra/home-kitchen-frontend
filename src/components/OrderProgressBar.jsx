@@ -1,3 +1,4 @@
+import React from "react";
 export default function OrderProgressBar({ status }) {
   const steps = ["PENDING", "ACCEPTED", "DELIVERED"];
   const currentIndex = steps.indexOf(status);

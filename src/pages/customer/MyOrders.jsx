@@ -1,4 +1,5 @@
 // pages/customer/MyOrders.jsx
+import React from "react";
 
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
@@ -18,9 +19,6 @@ export default function MyOrders() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
-      <div className="bg-red-500 text-white p-4">
-  Tailwind Test
-</div>
       <h2 className="text-xl font-bold mb-4">📦 My Orders</h2>
 
       {/* Date filter */}
