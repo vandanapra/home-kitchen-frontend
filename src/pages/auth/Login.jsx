@@ -190,7 +190,7 @@ export default function Login() {
       <div className="bg-white w-full max-w-sm p-6 rounded-xl shadow">
 
         <h1 className="text-2xl font-bold text-center mb-2">
-          🍛 Home Kitchen Website
+          🍛 Home Kitchen
         </h1>
         <p className="text-center text-red-500 mb-6">
           Login with OTP
