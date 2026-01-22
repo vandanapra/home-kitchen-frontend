@@ -248,11 +248,27 @@ export default function SellerDashboard() {
               key={item.id}
               className="border p-3 mb-3 rounded flex justify-between"
             >
-              <div>
+              {/* <div>
                 <h4 className="font-semibold">{item.name}</h4>
                 <p className="text-sm text-gray-600">{item.description}</p>
                 <p className="font-bold">₹{item.price}</p>
+              </div> */}
+              <div className="flex gap-4">
+                {item.image_url && (
+                  <img
+                    src={`http://13.233.98.184${item.image_url}`}
+                    alt={item.name}
+                    className="w-20 h-20 rounded object-cover border"
+                  />
+                )}
+
+                <div>
+                  <h4 className="font-semibold">{item.name}</h4>
+                  <p className="text-sm text-gray-600">{item.description}</p>
+                  <p className="font-bold">₹{item.price}</p>
+                </div>
               </div>
+
 
               <button
                 onClick={() => deleteItem(item.id)}

@@ -139,7 +139,13 @@ export default function CustomerMenu() {
               <div
                 key={item.id}
                 className="border p-4 mb-3 rounded flex justify-between items-center"
-              >
+              > {item.image_url && (
+                  <img
+                    src={`http://13.233.98.184${item.image_url}`}
+                    alt={item.name}
+                    className="w-20 h-20 rounded object-cover border"
+                  />
+                )}
                 <div>
                   <h3 className="font-semibold">
                     {item.name}

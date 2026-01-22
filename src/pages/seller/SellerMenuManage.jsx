@@ -14,7 +14,7 @@ export default function SellerMenuManage() {
   const navigate = useNavigate(); // 🔥 added
   const [day, setDay] = useState(DAYS[0]);
   const [items, setItems] = useState([
-    { name: "", description: "", price: "" }
+    { name: "", description: "", price: "" ,image:null}
   ]);
   const [message, setMessage] = useState("");
 
@@ -24,18 +24,45 @@ export default function SellerMenuManage() {
     setItems(updated);
   };
 
-  const addItem = () => {
-    setItems([...items, { name: "", description: "", price: "" }]);
+  const handleImage = (i, file) => {
+    const updated = [...items];
+    updated[i].image = file;
+    setItems(updated);
   };
 
-  const submitMenu = async () => {
-    try {
-      await api.put("/seller/menu/", { day, items });
-      setMessage("Menu saved successfully");
-    } catch {
-      setMessage("Failed to save menu");
-    }
+  const addItem = () => {
+    setItems([...items, { name: "", description: "", price: "",image:null }]);
   };
+
+  // const submitMenu = async () => {
+  //   try {
+  //     await api.put("/seller/menu/", { day, items });
+  //     setMessage("Menu saved successfully");
+  //   } catch {
+  //     setMessage("Failed to save menu");
+  //   }
+  // };
+  const submitMenu = async () => {
+    const formData = new FormData();
+    formData.append("day", day);
+
+    items.forEach((item, i) => {
+      formData.append("name", item.name);
+      formData.append("description", item.description);
+      formData.append("price", item.price);
+      if (item.image) {
+        formData.append(`image_${i}`, item.image);
+      }
+    });
+
+    await api.put("/seller/menu/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    alert("Menu saved");
+  };
+
+
 
   return (
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded">
@@ -82,6 +109,21 @@ export default function SellerMenuManage() {
             onChange={(e) => handleChange(i, e)}
             className="w-full border p-2"
           />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleImage(i, e.target.files[0])}
+          />
+
+
+          {/* <input name="name" onChange={(e) => handleChange(i, e)} />
+          <textarea name="description" onChange={(e) => handleChange(i, e)} />
+          <input name="price" onChange={(e) => handleChange(i, e)} />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => handleImage(i, e.target.files[0])}
+          /> */}
         </div>
       ))}
 
