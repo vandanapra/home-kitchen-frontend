@@ -12,10 +12,34 @@ export default function MyOrders() {
   );
 
   useEffect(() => {
+  let intervalId;
+
+  const fetchOrders = () => {
     api
       .get(`/orders/customer/?date=${date}`)
-      .then((res) => setOrders(res.data));
-  }, [date]);
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setOrders(res.data);
+        } else {
+          setOrders([]);
+        }
+      })
+      .catch(() => {
+        // ❗ NEVER break UI
+        setOrders([]);
+      });
+  };
+
+  // 🔹 first load
+  fetchOrders();
+
+  // 🔁 auto refresh every 5 sec
+  intervalId = setInterval(fetchOrders, 5000);
+
+  return () => clearInterval(intervalId);
+}, [date]);
+
+
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

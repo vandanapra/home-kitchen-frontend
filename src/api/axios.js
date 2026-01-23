@@ -1,5 +1,6 @@
 import axios from "axios";
-
+import { logout } from "../services/auth"; // ya jahan tumne logout rakha ho
+import { toast } from "react-hot-toast";
 const api = axios.create({
   baseURL: "http://13.233.98.184:8000/api/",
   headers: {
@@ -24,5 +25,28 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export default api;
+// export default api;
 
+
+
+
+/* ================= RESPONSE INTERCEPTOR ================= */
+api.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // 🔥 TOKEN EXPIRED / INVALID
+      logout();
+
+      // alert("⏰ Your session has expired. Please login again.");
+      toast.error("Session expired. Please login again.");
+      // Redirect to login
+      window.location.href = "/";
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;
