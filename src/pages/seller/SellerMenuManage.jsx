@@ -34,14 +34,6 @@ export default function SellerMenuManage() {
     setItems([...items, { name: "", description: "", price: "",image:null }]);
   };
 
-  // const submitMenu = async () => {
-  //   try {
-  //     await api.put("/seller/menu/", { day, items });
-  //     setMessage("Menu saved successfully");
-  //   } catch {
-  //     setMessage("Failed to save menu");
-  //   }
-  // };
   const submitMenu = async () => {
     const formData = new FormData();
     formData.append("day", day);
@@ -60,6 +52,7 @@ export default function SellerMenuManage() {
     });
 
     alert("Menu saved");
+    navigate("/seller/dashboard");
   };
 
 
@@ -109,21 +102,15 @@ export default function SellerMenuManage() {
             onChange={(e) => handleChange(i, e)}
             className="w-full border p-2"
           />
-          <input
+      
+             <input
             type="file"
             accept="image/*"
             onChange={(e) => handleImage(i, e.target.files[0])}
+            // className= "border p-2 mt-2 rounded-lg"
           />
-
-
-          {/* <input name="name" onChange={(e) => handleChange(i, e)} />
-          <textarea name="description" onChange={(e) => handleChange(i, e)} />
-          <input name="price" onChange={(e) => handleChange(i, e)} />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleImage(i, e.target.files[0])}
-          /> */}
+        
+         
         </div>
       ))}
 

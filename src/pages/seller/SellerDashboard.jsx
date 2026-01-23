@@ -78,19 +78,33 @@ export default function SellerDashboard() {
     setItems(updated);
   };
 
+  
   const saveMenu = async () => {
-    try {
-      await api.put("/seller/menu/", {
-        day: selectedDay,
-        items,
-      });
-      setEditMode(false);
-      setMessage("Menu updated successfully");
-      fetchMenu(selectedDay);
-    } catch {
-      setMessage("Failed to save menu");
-    }
+    const formData = new FormData();
+
+    formData.append("day", selectedDay);
+
+    items.forEach((item, index) => {
+      if (item.id) formData.append("id", item.id);
+      formData.append("name", item.name);
+      formData.append("description", item.description);
+      formData.append("price", item.price);
+
+      if (item.image) {
+        formData.append(`image_${index}`, item.image);
+      }
+      // setMessage("Menu updated successfully");
+    });
+
+    await api.put("/seller/menu/", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    alert("Menu Updated");
+    // navigate("/seller/dashboard");
   };
+
 
   const deleteItem = async (id) => {
     if (!window.confirm("Delete this item?")) return;
@@ -248,11 +262,6 @@ export default function SellerDashboard() {
               key={item.id}
               className="border p-3 mb-3 rounded flex justify-between"
             >
-              {/* <div>
-                <h4 className="font-semibold">{item.name}</h4>
-                <p className="text-sm text-gray-600">{item.description}</p>
-                <p className="font-bold">₹{item.price}</p>
-              </div> */}
               <div className="flex gap-4">
                 {item.image_url && (
                   <img
@@ -300,6 +309,18 @@ export default function SellerDashboard() {
                 onChange={(e) => handleChange(i, e)}
                 className="w-full border p-2"
               />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const updated = [...items];
+                  updated[i].image = e.target.files[0];
+                  setItems(updated);
+                }}
+                className="mt-2"
+              />
+
+
             </div>
           ))}
 

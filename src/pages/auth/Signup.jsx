@@ -9,6 +9,7 @@ export default function Signup() {
   const [form, setForm] = useState({
     name: "",
     city: "",
+    email: "",
     address: "",
     pincode: "",
     role: "CUSTOMER", // 🔥 DEFAULT
@@ -122,6 +123,17 @@ export default function Signup() {
         />
         {errors.address && (
           <p className="text-red-500 text-sm">{errors.address}</p>
+        )}
+
+        {/* email */}
+        <textarea
+          name="email"
+          placeholder="Email"
+          onChange={handleChange}
+          className="w-full border p-2 mb-1 rounded"
+        />
+        {errors.email && (
+          <p className="text-red-500 text-sm">{errors.email}</p>
         )}
 
         {/* PINCODE */}

@@ -23,14 +23,16 @@ export default function CustomerMenu() {
 
   const [selectedDay, setSelectedDay] = useState(today);
 
-  const [menu, setMenu] = useState(null);
   const [items, setItems] = useState([]); // 🔥 SAFE STATE
   const [cart, setCart] = useState([]);
   const [message, setMessage] = useState("");
+  const [kitchenName, setKitchenName] = useState("");
+
 
   useEffect(() => {
     fetchMenu(selectedDay);
   }, [sellerId, selectedDay]);
+
 
   const fetchMenu = async (day) => {
     try {
@@ -38,10 +40,6 @@ export default function CustomerMenu() {
         `/seller/customer/menu/${sellerId}/?day=${day}`
       );
 
-      // ✅ NORMALIZE RESPONSE
-      // if (res.data && res.data.items) {
-      //   setMenu(res.data);
-      //   setItems(res.data.items);
       if (res.data.items && res.data.items.length > 0) {
         setItems(res.data.items);
         setMessage("");
@@ -103,6 +101,20 @@ export default function CustomerMenu() {
     }
   };
 
+  useEffect(() => {
+  const fetchSellerDetails = async () => {
+  try {
+    const res = await api.get(`/seller/customer/menu/${sellerId}/`);
+    setKitchenName(res.data.kitchen_name);
+  } catch (err) {
+    console.error("Failed to load seller details");
+  }
+};
+fetchSellerDetails();
+}, [sellerId]);
+
+
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -111,7 +123,7 @@ export default function CustomerMenu() {
         <div className="md:col-span-2 bg-white p-6 rounded-xl shadow">
           <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold mb-4">
-            🍽 Menu
+            🍽 {kitchenName ? kitchenName : "Kitchen"} Menu
           </h2>
 
           {/* 🔽 DAY DROPDOWN */}

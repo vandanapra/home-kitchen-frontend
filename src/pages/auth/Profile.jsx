@@ -12,6 +12,7 @@ export default function Profile() {
     name: "",
     city: "",
     address: "",
+    email: "",
     pincode: "",
   });
 
@@ -51,9 +52,7 @@ export default function Profile() {
         address: form.address,
         pincode: form.pincode,
       });
-    //   setMessage("Profile updated successfully");
-            // ✅ DIRECT REDIRECT AFTER SUCCESS
-    //   navigate("/dashboard");
+      setTimeout(() => navigate("/seller/dashboard"), 1500);
 
     } catch (err) {
       setError("Failed to update profile");
@@ -122,6 +121,16 @@ export default function Profile() {
         <input
           name="pincode"
           value={form.pincode}
+          onChange={handleChange}
+          className="w-full border p-2 mb-4 rounded"
+        />
+
+        <label className="block mb-1 text-sm font-medium">
+          Email
+        </label>
+        <input
+          name="email"
+          value={form.email}
           onChange={handleChange}
           className="w-full border p-2 mb-4 rounded"
         />
