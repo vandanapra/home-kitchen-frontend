@@ -165,14 +165,20 @@ export default function SellerDashboard() {
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div 
+    className="min-h-screen bg-cover bg-center"
+    style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
+      }}
+    >
 
       {/* ================= HEADER ================= */}
-      <header className="bg-white shadow">
+      <header className="bg-gradient-to-r from-orange-50 to-yellow-50 shadow">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">
-            🍛 Seller Dashboard
-          </h1>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+  👨‍🍳 Seller Dashboard
+</h1>
 
           <div className="flex items-center gap-4">
             {!soundEnabled && (
@@ -184,11 +190,11 @@ export default function SellerDashboard() {
               </button>
             )}
 
-            <button onClick={() => navigate("/profile")} className="text-blue-600">
+            <button onClick={() => navigate("/profile")} className="text-blue-600 font-bold">
               Edit Profile →
             </button>
 
-            <button onClick={() => navigate("/seller-profile")} className="text-green-600">
+            <button onClick={() => navigate("/seller-profile")} className="text-green-600 font-bold">
               My Kitchen →
             </button>
 
@@ -201,7 +207,7 @@ export default function SellerDashboard() {
 
             <button
               onClick={() => navigate("/seller/orders")}
-              className="relative text-blue-600"
+              className="relative text-blue-600 font-bold"
             >
               View Orders →
               {newOrderCount > 0 && (
@@ -223,7 +229,7 @@ export default function SellerDashboard() {
 
       {/* ================= MENU ================= */}
       <div className="p-6">
-        <div className="bg-white p-6 rounded-xl shadow max-w-4xl mx-auto">
+        <div className="bg-white/85 p-6 rounded-xl shadow max-w-4xl mx-auto">
 
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
@@ -339,5 +345,6 @@ export default function SellerDashboard() {
         </div>
       </div>
     </div>
+   
   );
 }

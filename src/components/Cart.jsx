@@ -1,5 +1,5 @@
 import React from "react";
-
+import toast from "react-hot-toast";
 import api from "../api/axios";
 
 export default function Cart({
@@ -34,16 +34,12 @@ export default function Cart({
           quantity: i.quantity,
         })),
       });
-
-      alert("✅ Order placed successfully!");
+      toast.success("Order placed successfully 🎉");
+      // setTimeout(() => navigate("/customer/dashboard"), 100);
       window.location.reload();
     } catch (err) {
-      console.error(err);
-      alert(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Order failed"
-      );
+      toast.error(err.response?.data?.message || "Order failed");
+      
     }
   };
 

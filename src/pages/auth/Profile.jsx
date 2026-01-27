@@ -1,12 +1,12 @@
 import React from "react";
 
 import { useEffect, useState } from "react";
-// import api from "../../services/api";
 import api from "../../api/axios";
-
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Profile() {
-//   const navigate = useNavigate();   // ✅ ADD THIS
+  const navigate = useNavigate();   // ✅ ADD THIS
   const [form, setForm] = useState({
     mobile: "",
     name: "",
@@ -52,8 +52,17 @@ export default function Profile() {
         address: form.address,
         pincode: form.pincode,
       });
-      setTimeout(() => navigate("/seller/dashboard"), 1500);
-
+      // setMessage("Profile updated successfully");
+      // alert(" Profile updated successfully.");
+      toast.success("Profile updated successfully 🎉");
+      // 🔥 ROLE BASED REDIRECT
+      setTimeout(() => {
+        if (form.role === "SELLER") {
+          navigate("/seller/dashboard");
+        } else {
+          navigate("/customer/dashboard");
+        }
+      }, 800);
     } catch (err) {
       setError("Failed to update profile");
     } finally {
