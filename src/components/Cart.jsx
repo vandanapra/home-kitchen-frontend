@@ -16,7 +16,8 @@ export default function Cart({
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [placing, setPlacing] = useState(false);
-
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [partialAmount, setPartialAmount] = useState("");
   const total = cart.reduce(
     (sum, i) => sum + Number(i.price) * i.quantity,
     0
@@ -38,12 +39,29 @@ export default function Cart({
       toast.error("Please select delivery address");
       return;
     }
+    if (paymentMethod === "PARTIAL") {
+      if (!partialAmount || Number(partialAmount) <= 0) {
+        toast.error("Enter valid partial amount");
+        return;
+      }
+      if (Number(partialAmount) >= total) {
+        toast.error("Partial amount must be less than total");
+        return;
+      }
+    }
 
     setPlacing(true);
     try {
       await api.post("/orders/place/", {
         seller_id: sellerId,
         day,
+        payment_method: paymentMethod,
+        paid_amount:
+          paymentMethod === "PARTIAL"
+            ? partialAmount
+            : paymentMethod === "ONLINE"
+            ? total
+            : 0,
         address_id: address.id, // 🔥 IMPORTANT
         items: cart.map((i) => ({
           menu_item_id: i.menu_item_id,
@@ -151,6 +169,33 @@ export default function Cart({
           <p className="text-sm text-gray-600 mb-2">
             📅 For: <strong>{day}</strong>
           </p>
+
+          {/* 🔥 PAYMENT METHOD */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-1">
+              Payment Method
+            </label>
+
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full border p-2 rounded"
+            >
+              <option value="COD">Cash on Delivery</option>
+              <option value="ONLINE">Online Payment</option>
+              <option value="PARTIAL">Partial Payment</option>
+            </select>
+
+            {paymentMethod === "PARTIAL" && (
+              <input
+                type="number"
+                placeholder="Enter amount to pay now"
+                value={partialAmount}
+                onChange={(e) => setPartialAmount(e.target.value)}
+                className="w-full border p-2 rounded mt-2"
+              />
+            )}
+          </div>
 
           <button
             onClick={handlePlaceClick}

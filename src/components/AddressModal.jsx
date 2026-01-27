@@ -8,6 +8,9 @@ export default function AddressModal({ onConfirm, onClose }) {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // 🔥 NEW: track edit mode
+  const [editingId, setEditingId] = useState(null);
+
   const [form, setForm] = useState({
     address: "",
     city: "",
@@ -41,6 +44,7 @@ export default function AddressModal({ onConfirm, onClose }) {
     });
   };
 
+  /* ================= SAVE (ADD / EDIT) ================= */
   const saveAddress = async () => {
     if (!form.address || !form.city || !form.pincode) {
       toast.error("All fields required");
@@ -49,23 +53,65 @@ export default function AddressModal({ onConfirm, onClose }) {
 
     setLoading(true);
     try {
-      const res = await api.post("/auth/addresses/", form);
-      toast.success("Address saved");
+      let res;
 
-      setAddresses((prev) => [...prev, res.data]);
-      setSelected(res.data);
+      if (editingId) {
+        // ✏️ UPDATE
+        res = await api.put(
+          `/auth/addresses/${editingId}/`,
+          form
+        );
+        toast.success("Address updated");
+      } else {
+        // ➕ CREATE
+        res = await api.post("/auth/addresses/", form);
+        toast.success("Address saved");
+      }
+
       setShowForm(false);
-
+      setEditingId(null);
       setForm({
         address: "",
         city: "",
         pincode: "",
         is_default: false,
       });
+
+      fetchAddresses();
     } catch {
       toast.error("Failed to save address");
     } finally {
       setLoading(false);
+    }
+  };
+
+  /* ================= EDIT ================= */
+  const handleEdit = (addr) => {
+    setEditingId(addr.id);
+    setForm({
+      address: addr.address,
+      city: addr.city,
+      pincode: addr.pincode,
+      is_default: addr.is_default,
+    });
+    setShowForm(true);
+  };
+
+  /* ================= DELETE ================= */
+  const handleDelete = async (addrId) => {
+    if (!window.confirm("Delete this address?")) return;
+
+    try {
+      await api.delete(`/auth/addresses/${addrId}/`);
+      toast.success("Address deleted");
+
+      if (selected?.id === addrId) {
+        setSelected(null);
+      }
+
+      fetchAddresses();
+    } catch {
+      toast.error("Failed to delete address");
     }
   };
 
@@ -118,9 +164,7 @@ export default function AddressModal({ onConfirm, onClose }) {
                   }
                 `}
               >
-                <p className="font-semibold">
-                  {addr.address}
-                </p>
+                <p className="font-semibold">{addr.address}</p>
                 <p className="text-sm text-gray-600">
                   {addr.city} - {addr.pincode}
                 </p>
@@ -132,17 +176,39 @@ export default function AddressModal({ onConfirm, onClose }) {
                     </span>
                   )}
 
-                  {!addr.is_default && (
+                  <div className="flex gap-3">
+                    {!addr.is_default && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDefault(addr);
+                        }}
+                        className="text-xs text-blue-600 underline"
+                      >
+                        Set default
+                      </button>
+                    )}
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDefault(addr);
+                        handleEdit(addr);
                       }}
-                      className="text-xs text-blue-600 underline"
+                      className="text-xs text-indigo-600 underline"
                     >
-                      Set as default
+                      Edit
                     </button>
-                  )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(addr.id);
+                      }}
+                      className="text-xs text-red-600 underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -150,7 +216,16 @@ export default function AddressModal({ onConfirm, onClose }) {
             {/* ACTION BUTTONS */}
             <div className="flex gap-3 mt-4">
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setShowForm(true);
+                  setEditingId(null);
+                  setForm({
+                    address: "",
+                    city: "",
+                    pincode: "",
+                    is_default: false,
+                  });
+                }}
                 className="flex-1 border border-gray-400 py-2 rounded"
               >
                 + Add New Address
@@ -173,7 +248,7 @@ export default function AddressModal({ onConfirm, onClose }) {
           </>
         )}
 
-        {/* ================= ADD ADDRESS FORM ================= */}
+        {/* ================= ADD / EDIT FORM ================= */}
         {showForm && (
           <>
             <div className="space-y-3">
@@ -214,7 +289,10 @@ export default function AddressModal({ onConfirm, onClose }) {
 
             <div className="flex gap-3 mt-5">
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => {
+                  setShowForm(false);
+                  setEditingId(null);
+                }}
                 className="flex-1 border py-2 rounded"
               >
                 Cancel
@@ -225,12 +303,15 @@ export default function AddressModal({ onConfirm, onClose }) {
                 disabled={loading}
                 className="flex-1 bg-green-600 text-white py-2 rounded"
               >
-                {loading ? "Saving..." : "Save Address"}
+                {loading
+                  ? "Saving..."
+                  : editingId
+                  ? "Update Address"
+                  : "Save Address"}
               </button>
             </div>
           </>
         )}
-
       </div>
     </div>
   );
