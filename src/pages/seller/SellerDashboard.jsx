@@ -232,7 +232,7 @@ export default function SellerDashboard() {
         <div className="bg-white/85 p-6 rounded-xl shadow max-w-4xl mx-auto">
 
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl font-bold text-red-700">
               🍱 Menu for {selectedDay}
             </h2>
 

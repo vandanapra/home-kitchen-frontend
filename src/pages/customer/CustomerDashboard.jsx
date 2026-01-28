@@ -72,7 +72,7 @@ export default function CustomerHome() {
               </button>
             </div>
 
-            <h2 className="text-2xl font-bold mb-2">
+            <h2 className="text-2xl text-red-700 font-bold mb-2">
               👋 Welcome, {profile.name}
             </h2>
 
@@ -111,7 +111,7 @@ export default function CustomerHome() {
                 key={seller.id}
                 className="bg-white/55 backdrop-blur rounded-2xl shadow-lg p-5 hover:shadow-2xl transition"
               >
-                <h3 className="text-xl font-bold">
+                <h3 className="text-xl text-green-700 font-bold">
                   {seller.kitchen_name}
                 </h3>
 

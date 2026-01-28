@@ -157,7 +157,7 @@ fetchSellerDetails();
             items.map((item) => (
               <div
                 key={item.id}
-                className="border p-4 mb-3 rounded flex justify-between items-center"
+                className=" p-4 mb-3 rounded flex justify-between items-center"
               > {item.image_url && (
                   <img
                     src={`http://13.233.98.184${item.image_url}`}

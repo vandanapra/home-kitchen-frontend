@@ -41,19 +41,25 @@ export default function MyOrders() {
 
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">📦 My Orders</h2>
+    <div 
+    className="p-6 max-w-7xl mx-auto bg-cover bg-center"
+    style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
+      }}
+    >
+      <h2 className="text-xl text-red-700 font-bold mb-4">📦 My Orders</h2>
 
       {/* Date filter */}
       <input
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="border p-2 mb-6"
+        className="rounded-lg p-2 mb-6 bg-white/85"
       />
 
       {orders.length === 0 && (
-        <p className="text-gray-500">
+        <p className="text-white-800">
           No orders for selected date
         </p>
       )}
@@ -61,7 +67,7 @@ export default function MyOrders() {
       {orders.map((o) => (
         <div
           key={o.id}
-          className="border rounded-lg p-4 mb-6 bg-white shadow-sm"
+          className=" rounded-lg p-4 mb-6 bg-white/85 shadow-sm"
         >
           {/* Kitchen */}
           <p className="font-semibold text-lg mb-1">
