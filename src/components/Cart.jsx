@@ -159,7 +159,7 @@ export default function Cart({
   };
 
   return (
-    <div className="bg-white/85 p-5 rounded-xl shadow sticky top-6">
+    <div className="bg-white/85 p-5 rounded-xl mt-20 shadow sticky top-6">
       <h3 className="text-lg font-bold mb-3">
         🛒 Your Cart
       </h3>

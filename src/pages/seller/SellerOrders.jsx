@@ -116,7 +116,7 @@ export default function SellerOrders() {
           </div>
 
           {/* 🔥 ACTION BUTTONS */}
-          {order.status === "PENDING" && (
+          {["PENDING", "PAID"].includes(order.status) && (
             <div className="mt-4 flex gap-3">
               <button
                 onClick={() =>
