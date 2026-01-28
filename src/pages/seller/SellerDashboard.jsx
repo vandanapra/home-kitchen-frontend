@@ -176,7 +176,7 @@ export default function SellerDashboard() {
       {/* ================= HEADER ================= */}
       <header className="bg-gradient-to-r from-orange-50 to-yellow-50 shadow">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold flex items-center gap-2">
+          <h1 className="text-xl text-red-600 font-bold flex items-center gap-2">
   👨‍🍳 Seller Dashboard
 </h1>
 
@@ -200,7 +200,7 @@ export default function SellerDashboard() {
 
             <button
               onClick={() => navigate("/seller/menu/manage")}
-              className="bg-black text-white px-3 py-2 rounded"
+              className="bg-green-500 text-white px-3 py-2 rounded"
             >
               Manage Menu
             </button>

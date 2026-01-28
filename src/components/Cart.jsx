@@ -4,6 +4,17 @@ import api from "../api/axios";
 import AddressModal from "./AddressModal";
 import { useNavigate } from "react-router-dom";
 
+/* ================= LOAD RAZORPAY ================= */
+const loadRazorpay = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 export default function Cart({
   cart,
   sellerId,
@@ -18,12 +29,13 @@ export default function Cart({
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [partialAmount, setPartialAmount] = useState("");
+
   const total = cart.reduce(
     (sum, i) => sum + Number(i.price) * i.quantity,
     0
   );
 
-  /* ================= PLACE ORDER ================= */
+  /* ================= PLACE ORDER (UNCHANGED NAME) ================= */
   const placeOrder = async (address) => {
     if (!day) {
       toast.error("Please select a day");
@@ -39,6 +51,7 @@ export default function Cart({
       toast.error("Please select delivery address");
       return;
     }
+
     if (paymentMethod === "PARTIAL") {
       if (!partialAmount || Number(partialAmount) <= 0) {
         toast.error("Enter valid partial amount");
@@ -50,73 +63,123 @@ export default function Cart({
       }
     }
 
-    setPlacing(true);
+    // 🔥 COD FLOW (NO CHANGE)
+    if (paymentMethod === "COD") {
+      setPlacing(true);
+      try {
+        await api.post("/orders/place/", {
+          seller_id: sellerId,
+          day,
+          payment_method: "COD",
+          paid_amount: 0,
+          address_id: address.id,
+          items: cart.map((i) => ({
+            menu_item_id: i.menu_item_id,
+            quantity: i.quantity,
+          })),
+        });
+
+        toast.success("Order placed successfully 🎉");
+        setTimeout(() => navigate("/customer/dashboard"), 500);
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Order failed");
+      } finally {
+        setPlacing(false);
+      }
+      return;
+    }
+
+    /* ================= RAZORPAY FLOW ================= */
+    const amountToPay =
+      paymentMethod === "PARTIAL"
+        ? Number(partialAmount)
+        : total;
+
+    const loaded = await loadRazorpay();
+    if (!loaded) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
     try {
-      await api.post("/orders/place/", {
-        seller_id: sellerId,
-        day,
-        payment_method: paymentMethod,
-        paid_amount:
-          paymentMethod === "PARTIAL"
-            ? partialAmount
-            : paymentMethod === "ONLINE"
-            ? total
-            : 0,
-        address_id: address.id, // 🔥 IMPORTANT
-        items: cart.map((i) => ({
-          menu_item_id: i.menu_item_id,
-          quantity: i.quantity,
-        })),
+      const orderRes = await api.post("/orders/razorpay/create/", {
+        amount: amountToPay,
       });
 
-      toast.success("Order placed successfully 🎉");
+      const options = {
+        key: orderRes.data.key,
+        amount: amountToPay * 100,
+        currency: "INR",
+        name: "Home Kitchen",
+        description: "Food Order",
+        order_id: orderRes.data.razorpay_order_id,
 
-      // 👉 redirect customer dashboard
-      setTimeout(() => {
-        navigate("/customer/dashboard");
-      }, 500);
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Order failed");
-    } finally {
-      setPlacing(false);
+        handler: async (response) => {
+          try {
+            await api.post("/orders/place/", {
+              seller_id: sellerId,
+              day,
+              payment_method: paymentMethod,
+              paid_amount: amountToPay,
+              address_id: address.id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              items: cart.map((i) => ({
+                menu_item_id: i.menu_item_id,
+                quantity: i.quantity,
+              })),
+            });
+
+            toast.success("Payment successful 🎉");
+            setTimeout(
+              () => navigate("/customer/dashboard"),
+              500
+            );
+          } catch {
+            toast.error("Order creation failed after payment");
+          }
+        },
+
+        theme: {
+          color: "#16a34a",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch {
+      toast.error("Payment initiation failed");
     }
   };
 
-  /* ================= ADDRESS FLOW ================= */
+  /* ================= ADDRESS FLOW (UNCHANGED NAME) ================= */
   const handlePlaceClick = () => {
     setShowAddressModal(true);
   };
 
   return (
-    <div className="bg-white p-5 rounded-xl shadow sticky top-6">
-
+    <div className="bg-white/85 p-5 rounded-xl shadow sticky top-6">
       <h3 className="text-lg font-bold mb-3">
         🛒 Your Cart
       </h3>
 
-      {/* EMPTY CART */}
       {cart.length === 0 && (
-        <p className="text-gray-500">
-          Cart is empty
-        </p>
+        <p className="text-gray-500">Cart is empty</p>
       )}
 
-      {/* CART ITEMS */}
       {cart.map((item) => (
         <div
           key={item.menu_item_id}
           className="flex justify-between items-center mb-3"
         >
           <div>
-            <p className="font-semibold">
-              {item.name}
-            </p>
+            <p className="font-semibold">{item.name}</p>
             <p className="text-sm text-gray-600">
               ₹{item.price}
             </p>
           </div>
 
-          {/* QTY CONTROLS */}
           <div className="flex items-center gap-2">
             <button
               onClick={() =>
@@ -149,7 +212,6 @@ export default function Cart({
                 removeFromCart(item.menu_item_id)
               }
               className="text-red-600 ml-2"
-              title="Remove item"
             >
               ❌
             </button>
@@ -157,7 +219,6 @@ export default function Cart({
         </div>
       ))}
 
-      {/* TOTAL + ACTION */}
       {cart.length > 0 && (
         <>
           <hr className="my-3" />
@@ -170,7 +231,7 @@ export default function Cart({
             📅 For: <strong>{day}</strong>
           </p>
 
-          {/* 🔥 PAYMENT METHOD */}
+          {/* PAYMENT METHOD */}
           <div className="mb-4">
             <label className="block text-sm font-semibold mb-1">
               Payment Method
@@ -178,7 +239,9 @@ export default function Cart({
 
             <select
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
+              onChange={(e) =>
+                setPaymentMethod(e.target.value)
+              }
               className="w-full border p-2 rounded"
             >
               <option value="COD">Cash on Delivery</option>
@@ -191,7 +254,9 @@ export default function Cart({
                 type="number"
                 placeholder="Enter amount to pay now"
                 value={partialAmount}
-                onChange={(e) => setPartialAmount(e.target.value)}
+                onChange={(e) =>
+                  setPartialAmount(e.target.value)
+                }
                 className="w-full border p-2 rounded mt-2"
               />
             )}
@@ -207,7 +272,6 @@ export default function Cart({
         </>
       )}
 
-      {/* ================= ADDRESS MODAL ================= */}
       {showAddressModal && (
         <AddressModal
           onClose={() => setShowAddressModal(false)}

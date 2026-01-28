@@ -55,14 +55,20 @@ export default function SellerOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div 
+    // className="min-h-screen bg-gray-100 p-6"
+    className="min-h-screen bg-cover bg-center"
+    style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
+      }}>
       <button
         onClick={() => navigate("/seller/dashboard")}
-        className="text-blue-600 mb-4 hover:underline"
+        className="text-yellow-600 mb-4 font-bold hover:underline"
       >
-        ← Back to Dashboard
+        ← Back
       </button>
-      <h2 className="text-2xl font-bold mb-6">
+      <h2 className="text-2xl text-white font-bold mb-6">
         📦 Orders Received
       </h2>
 
@@ -71,7 +77,7 @@ export default function SellerOrders() {
         type="date"
         value={date}
         onChange={(e) => setDate(e.target.value)}
-        className="border p-2 mb-4"
+        className="border p-2 mb-4 bg-white/85"
       />
 
       {orders.length === 0 && (
@@ -81,7 +87,7 @@ export default function SellerOrders() {
       {orders.map((order) => (
         <div
           key={order.id}
-          className="bg-white p-5 mb-4 rounded shadow"
+          className="bg-white/85 p-5 mb-4 rounded shadow"
         >
           <p className="font-semibold">
             Customer: {order.customer_name}

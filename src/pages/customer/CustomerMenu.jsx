@@ -116,11 +116,18 @@ fetchSellerDetails();
 
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div 
+    // className="min-h-screen bg-gray-100 p-6"
+    className="min-h-screen bg-cover bg-center"
+    style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
+      }}
+    >
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* ================= MENU ================= */}
-        <div className="md:col-span-2 bg-white p-6 rounded-xl shadow">
+        <div className="md:col-span-2 bg-white/85 p-6 rounded-xl shadow">
           <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold mb-4">
             🍽 {kitchenName ? kitchenName : "Kitchen"} Menu

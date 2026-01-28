@@ -59,12 +59,18 @@ export default function SellerProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center p-6">
+    <div 
+    className="min-h-screen bg-gray-100 flex justify-center p-6"
+    style={{
+        backgroundImage:
+          "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
+      }}
+    >
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow w-full max-w-lg"
+        className="bg-white/85 p-6 rounded-xl shadow w-full max-w-lg"
       >
-        <h2 className="text-xl font-bold mb-4">
+        <h2 className="text-xl  text-red-700 font-bold mb-4">
           🍳 Kitchen Profile
         </h2>
 
@@ -121,7 +127,7 @@ export default function SellerProfile() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-black text-white py-2 rounded"
+          className="w-full bg-yellow-500 text-white py-2 rounded"
         >
           {loading ? "Saving..." : "Save Kitchen Profile"}
         </button>
