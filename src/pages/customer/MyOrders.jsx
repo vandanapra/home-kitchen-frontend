@@ -42,7 +42,8 @@ export default function MyOrders() {
 
   return (
     <div 
-    className="p-6 max-w-7xl mx-auto bg-cover bg-center"
+    className=" p-6 min-h-screen bg-cover bg-center"
+    
     style={{
         backgroundImage:
           "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",

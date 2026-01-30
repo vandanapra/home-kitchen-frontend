@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import api from "../api/axios";
 import AddressModal from "./AddressModal";
 import { useNavigate } from "react-router-dom";
-
+import PaymentSuccessAnimation from "./PaymentSuccessAnimation";
 /* ================= LOAD RAZORPAY ================= */
 const loadRazorpay = () => {
   return new Promise((resolve) => {
@@ -14,6 +14,21 @@ const loadRazorpay = () => {
     document.body.appendChild(script);
   });
 };
+
+/* ================= PAYMENT LOADER ================= */
+const PaymentLoader = () => (
+  <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+    <div className="bg-white rounded-xl p-6 text-center w-72 shadow-xl">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-green-600 mx-auto mb-4"></div>
+      <h3 className="font-semibold text-lg">
+        Confirming your order…
+      </h3>
+      <p className="text-sm text-gray-600 mt-1">
+        Please don’t refresh or go back
+      </p>
+    </div>
+  </div>
+);
 
 export default function Cart({
   cart,
@@ -27,9 +42,10 @@ export default function Cart({
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [placing, setPlacing] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false); // 🔥 NEW
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [partialAmount, setPartialAmount] = useState("");
-
+  const [showSuccess, setShowSuccess] = useState(false);
   const total = cart.reduce(
     (sum, i) => sum + Number(i.price) * i.quantity,
     0
@@ -63,11 +79,11 @@ export default function Cart({
       }
     }
 
-    // 🔥 COD FLOW (NO CHANGE)
+    /* ================= COD FLOW ================= */
     if (paymentMethod === "COD") {
       setPlacing(true);
       try {
-        await api.post("/orders/place/", {
+        const res = await api.post("/orders/place/", {
           seller_id: sellerId,
           day,
           payment_method: "COD",
@@ -80,7 +96,7 @@ export default function Cart({
         });
 
         toast.success("Order placed successfully 🎉");
-        setTimeout(() => navigate("/customer/dashboard"), 500);
+        navigate(`/order/confirmation/${res.data.order_id}`);
       } catch (err) {
         toast.error(err.response?.data?.message || "Order failed");
       } finally {
@@ -116,7 +132,9 @@ export default function Cart({
 
         handler: async (response) => {
           try {
-            await api.post("/orders/place/", {
+            setProcessingPayment(true); // 🔥 START LOADER
+
+            const res = await api.post("/orders/place/", {
               seller_id: sellerId,
               day,
               payment_method: paymentMethod,
@@ -130,13 +148,12 @@ export default function Cart({
                 quantity: i.quantity,
               })),
             });
-
-            toast.success("Payment successful 🎉");
-            setTimeout(
-              () => navigate("/customer/dashboard"),
-              500
-            );
+            // 🔥 SHOW TICK ANIMATION
+            setShowSuccess(true);
+            // toast.success("Payment successful 🎉");
+            navigate(`/order/confirmation/${res.data.order_id}`);
           } catch {
+            setProcessingPayment(false);
             toast.error("Order creation failed after payment");
           }
         },
@@ -153,135 +170,145 @@ export default function Cart({
     }
   };
 
-  /* ================= ADDRESS FLOW (UNCHANGED NAME) ================= */
+  /* ================= ADDRESS FLOW ================= */
   const handlePlaceClick = () => {
     setShowAddressModal(true);
   };
 
   return (
-    <div className="bg-white/85 p-5 rounded-xl mt-20 shadow sticky top-6">
-      <h3 className="text-lg font-bold mb-3">
-        🛒 Your Cart
-      </h3>
+    <>
+      <div className="bg-white/85 p-5 rounded-xl mt-20 shadow sticky top-6">
+        <h3 className="text-lg font-bold mb-3">
+          🛒 Your Cart
+        </h3>
 
-      {cart.length === 0 && (
-        <p className="text-gray-500">Cart is empty</p>
-      )}
+        {cart.length === 0 && (
+          <p className="text-gray-500">Cart is empty</p>
+        )}
 
-      {cart.map((item) => (
-        <div
-          key={item.menu_item_id}
-          className="flex justify-between items-center mb-3"
-        >
-          <div>
-            <p className="font-semibold">{item.name}</p>
-            <p className="text-sm text-gray-600">
-              ₹{item.price}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() =>
-                updateQty(
-                  item.menu_item_id,
-                  item.quantity - 1
-                )
-              }
-              className="border px-2 rounded"
-            >
-              −
-            </button>
-
-            <span>{item.quantity}</span>
-
-            <button
-              onClick={() =>
-                updateQty(
-                  item.menu_item_id,
-                  item.quantity + 1
-                )
-              }
-              className="border px-2 rounded"
-            >
-              +
-            </button>
-
-            <button
-              onClick={() =>
-                removeFromCart(item.menu_item_id)
-              }
-              className="text-red-600 ml-2"
-            >
-              ❌
-            </button>
-          </div>
-        </div>
-      ))}
-
-      {cart.length > 0 && (
-        <>
-          <hr className="my-3" />
-
-          <p className="font-bold mb-2">
-            Total: ₹{total}
-          </p>
-
-          <p className="text-sm text-gray-600 mb-2">
-            📅 For: <strong>{day}</strong>
-          </p>
-
-          {/* PAYMENT METHOD */}
-          <div className="mb-4">
-            <label className="block text-sm font-semibold mb-1">
-              Payment Method
-            </label>
-
-            <select
-              value={paymentMethod}
-              onChange={(e) =>
-                setPaymentMethod(e.target.value)
-              }
-              className="w-full border p-2 rounded"
-            >
-              <option value="COD">Cash on Delivery</option>
-              <option value="ONLINE">Online Payment</option>
-              <option value="PARTIAL">Partial Payment</option>
-            </select>
-
-            {paymentMethod === "PARTIAL" && (
-              <input
-                type="number"
-                placeholder="Enter amount to pay now"
-                value={partialAmount}
-                onChange={(e) =>
-                  setPartialAmount(e.target.value)
-                }
-                className="w-full border p-2 rounded mt-2"
-              />
-            )}
-          </div>
-
-          <button
-            onClick={handlePlaceClick}
-            disabled={placing}
-            className="w-full bg-green-600 text-white py-2 rounded mt-2 hover:bg-green-700 disabled:bg-gray-400"
+        {cart.map((item) => (
+          <div
+            key={item.menu_item_id}
+            className="flex justify-between items-center mb-3"
           >
-            {placing ? "Placing order..." : "Place Order"}
-          </button>
-        </>
-      )}
+            <div>
+              <p className="font-semibold">{item.name}</p>
+              <p className="text-sm text-gray-600">
+                ₹{item.price}
+              </p>
+            </div>
 
-      {showAddressModal && (
-        <AddressModal
-          onClose={() => setShowAddressModal(false)}
-          onConfirm={(addr) => {
-            setSelectedAddress(addr);
-            setShowAddressModal(false);
-            placeOrder(addr);
-          }}
-        />
-      )}
-    </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  updateQty(
+                    item.menu_item_id,
+                    item.quantity - 1
+                  )
+                }
+                className="border px-2 rounded"
+              >
+                −
+              </button>
+
+              <span>{item.quantity}</span>
+
+              <button
+                onClick={() =>
+                  updateQty(
+                    item.menu_item_id,
+                    item.quantity + 1
+                  )
+                }
+                className="border px-2 rounded"
+              >
+                +
+              </button>
+
+              <button
+                onClick={() =>
+                  removeFromCart(item.menu_item_id)
+                }
+                className="text-red-600 ml-2"
+              >
+                ❌
+              </button>
+            </div>
+          </div>
+        ))}
+
+        {cart.length > 0 && (
+          <>
+            <hr className="my-3" />
+
+            <p className="font-bold mb-2">
+              Total: ₹{total}
+            </p>
+
+            <p className="text-sm text-gray-600 mb-2">
+              📅 For: <strong>{day}</strong>
+            </p>
+
+            {/* PAYMENT METHOD */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-1">
+                Payment Method
+              </label>
+
+              <select
+                value={paymentMethod}
+                onChange={(e) =>
+                  setPaymentMethod(e.target.value)
+                }
+                className="w-full border p-2 rounded"
+              >
+                <option value="COD">Cash on Delivery</option>
+                <option value="ONLINE">Online Payment</option>
+                <option value="PARTIAL">Partial Payment</option>
+              </select>
+
+              {paymentMethod === "PARTIAL" && (
+                <input
+                  type="number"
+                  placeholder="Enter amount to pay now"
+                  value={partialAmount}
+                  onChange={(e) =>
+                    setPartialAmount(e.target.value)
+                  }
+                  className="w-full border p-2 rounded mt-2"
+                />
+              )}
+            </div>
+
+            <button
+              onClick={handlePlaceClick}
+              disabled={placing || processingPayment}
+              className="w-full bg-green-600 text-white py-2 rounded mt-2 hover:bg-green-700 disabled:bg-gray-400"
+            >
+              {processingPayment
+                ? "Processing payment..."
+                : "Place Order"}
+            </button>
+          </>
+        )}
+
+        {showAddressModal && (
+          <AddressModal
+            onClose={() => setShowAddressModal(false)}
+            onConfirm={(addr) => {
+              setSelectedAddress(addr);
+              setShowAddressModal(false);
+              placeOrder(addr);
+            }}
+          />
+        )}
+      </div>
+
+      {/* 🔥 PAYMENT LOADER */}
+      {processingPayment && <PaymentLoader />}
+
+      {showSuccess && <PaymentSuccessAnimation />}
+
+    </>
   );
 }

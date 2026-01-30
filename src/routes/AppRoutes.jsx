@@ -14,6 +14,7 @@ import CustomerMenu from "../pages/customer/CustomerMenu";
 import MyOrders from "../pages/customer/MyOrders";
 import SellerOrders from "../pages/seller/SellerOrders";
 import OrderHistory from "../pages/orders/OrderHistory";
+import OrderConfirmation from "../pages/orders/OrderConfirmation";
 
 export default function AppRoutes() {
   return (
@@ -33,6 +34,8 @@ export default function AppRoutes() {
         <Route path="/menu/:sellerId" element={<CustomerMenu />} />
         <Route path="/my-orders" element={<MyOrders />} />
         <Route path="/orders" element={<OrderHistory />} />
+        <Route path="/order/confirmation/:orderId" element={<OrderConfirmation/>}
+/>
       </Route>
 
       <Route element={<ProtectedRoute />}>
