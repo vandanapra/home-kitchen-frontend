@@ -49,7 +49,7 @@ export default function MyOrders() {
           "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
       }}
     >
-      <h2 className="text-xl text-red-700 font-bold mb-4">📦 My Orders</h2>
+      <h2 className="text-xl text-gray-100 font-bold mb-4">My Orders</h2>
 
       {/* Date filter */}
       <input

@@ -1,6 +1,6 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import api from "../../api/axios";
 import Cart from "../../components/Cart";
 
@@ -22,17 +22,16 @@ export default function CustomerMenu() {
     .toUpperCase();
 
   const [selectedDay, setSelectedDay] = useState(today);
-
-  const [items, setItems] = useState([]); // 🔥 SAFE STATE
+  const [items, setItems] = useState([]);
   const [cart, setCart] = useState([]);
+  const [cartDay, setCartDay] = useState(null); // 🔥 NEW
   const [message, setMessage] = useState("");
   const [kitchenName, setKitchenName] = useState("");
 
-
+  /* ================= FETCH MENU ================= */
   useEffect(() => {
     fetchMenu(selectedDay);
   }, [sellerId, selectedDay]);
-
 
   const fetchMenu = async (day) => {
     try {
@@ -44,20 +43,28 @@ export default function CustomerMenu() {
         setItems(res.data.items);
         setMessage("");
       } else {
-        // setMenu(null);
         setItems([]);
         setMessage("No menu available for today");
       }
-    } catch (err) {
-      // setMenu(null);
+    } catch {
       setItems([]);
       setMessage("Failed to load menu");
     }
   };
 
-  /* ================= CART FUNCTIONS ================= */
-
+  /* ================= ADD TO CART (FIXED) ================= */
   const addToCart = (item) => {
+    // ❌ Prevent different day items
+    if (cartDay && cartDay !== selectedDay) {
+      toast.error("❌ Dish should be of same day");
+      return;
+    }
+
+    // 🔒 Lock cart day on first add
+    if (!cartDay) {
+      setCartDay(selectedDay);
+    }
+
     const exists = cart.find(
       (i) => i.menu_item_id === item.id
     );
@@ -83,10 +90,29 @@ export default function CustomerMenu() {
     }
   };
 
+  const getItemQty = (itemId) => {
+  const found = cart.find(
+    (i) => i.menu_item_id === itemId
+  );
+  return found ? found.quantity : 0;
+};
+
+
+
+  /* ================= REMOVE FROM CART ================= */
   const removeFromCart = (id) => {
-    setCart(cart.filter((i) => i.menu_item_id !== id));
+    const updatedCart = cart.filter(
+      (i) => i.menu_item_id !== id
+    );
+    setCart(updatedCart);
+
+    // 🔓 Unlock day if cart empty
+    if (updatedCart.length === 0) {
+      setCartDay(null);
+    }
   };
 
+  /* ================= UPDATE QTY ================= */
   const updateQty = (id, qty) => {
     if (qty <= 0) {
       removeFromCart(id);
@@ -101,25 +127,25 @@ export default function CustomerMenu() {
     }
   };
 
+  /* ================= FETCH SELLER ================= */
   useEffect(() => {
-  const fetchSellerDetails = async () => {
-  try {
-    const res = await api.get(`/seller/customer/menu/${sellerId}/`);
-    setKitchenName(res.data.kitchen_name);
-  } catch (err) {
-    console.error("Failed to load seller details");
-  }
-};
-fetchSellerDetails();
-}, [sellerId]);
-
-
+    const fetchSellerDetails = async () => {
+      try {
+        const res = await api.get(
+          `/seller/customer/menu/${sellerId}/`
+        );
+        setKitchenName(res.data.kitchen_name);
+      } catch {
+        console.error("Failed to load seller details");
+      }
+    };
+    fetchSellerDetails();
+  }, [sellerId]);
 
   return (
-    <div 
-    // className="min-h-screen bg-gray-100 p-6"
-    className="min-h-screen bg-cover bg-center"
-    style={{
+    <div
+      className="min-h-screen bg-cover bg-center"
+      style={{
         backgroundImage:
           "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
       }}
@@ -129,11 +155,11 @@ fetchSellerDetails();
         {/* ================= MENU ================= */}
         <div className="md:col-span-2 bg-white/85 p-6 mt-20 rounded-xl shadow">
           <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold mb-4">
-            🍽 {kitchenName ? kitchenName : "Kitchen"} Menu
-          </h2>
+            <h2 className="text-xl font-bold">
+              🍽 {kitchenName || "Kitchen"} Menu
+            </h2>
 
-          {/* 🔽 DAY DROPDOWN */}
+            {/* DAY DROPDOWN */}
             <select
               value={selectedDay}
               onChange={(e) => setSelectedDay(e.target.value)}
@@ -147,51 +173,88 @@ fetchSellerDetails();
             </select>
           </div>
 
-          {message && (
-            <p className="text-gray-500">
-              {message}
+          {/* 🔒 Cart Day Info */}
+          {cartDay && (
+            <p className="text-xs text-gray-500 mb-3">
+              🧾 Cart locked for: <strong>{cartDay}</strong>
             </p>
           )}
 
-          {items.length > 0 &&
-            items.map((item) => (
-              <div
-                key={item.id}
-                className=" p-4 mb-3 rounded flex justify-between items-center"
-              > {item.image_url && (
-                  <img
-                    src={`http://13.233.98.184${item.image_url}`}
-                    alt={item.name}
-                    className="w-20 h-20 rounded object-cover border"
-                  />
-                )}
-                <div>
-                  <h3 className="font-semibold">
-                    {item.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {item.description}
-                  </p>
-                  <p className="font-bold">
-                    ₹{item.price}
-                  </p>
-                </div>
+          {message && (
+            <p className="text-gray-500">{message}</p>
+          )}
 
-                <button
-                  onClick={() => addToCart(item)}
-                  className="bg-black text-white px-4 py-1 rounded"
-                >
-                  Add +
-                </button>
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className="p-4 mb-3 rounded flex justify-between items-center"
+            >
+              {item.image_url && (
+                <img
+                  src={`http://13.233.98.184${item.image_url}`}
+                  alt={item.name}
+                  className="w-20 h-20 rounded object-cover border"
+                />
+              )}
+
+              <div>
+                <h3 className="font-semibold">
+                  {item.name}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {item.description}
+                </p>
+                <p className="font-bold">
+                  ₹{item.price}
+                </p>
               </div>
-            ))}
+
+
+              <div>
+                {getItemQty(item.id) === 0 ? (
+                  <button
+                    onClick={() => addToCart(item)}
+                    className="bg-black text-white px-4 py-1 rounded"
+                  >
+                    Add +
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() =>
+                        updateQty(item.id, getItemQty(item.id) - 1)
+                      }
+                      className="bg-gray-200 px-3 py-1 rounded text-lg"
+                    >
+                      −
+                    </button>
+
+                    <span className="font-semibold">
+                      {getItemQty(item.id)}
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        updateQty(item.id, getItemQty(item.id) + 1)
+                      }
+                      className="bg-green-600 text-white px-3 py-1 rounded text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+              </div>
+
+
+            </div>
+          ))}
         </div>
 
         {/* ================= CART ================= */}
         <Cart
           cart={cart}
           sellerId={sellerId}
-          day={selectedDay}  
+          day={selectedDay}
           updateQty={updateQty}
           removeFromCart={removeFromCart}
         />
