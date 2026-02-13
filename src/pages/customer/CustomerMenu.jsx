@@ -206,7 +206,7 @@ export default function CustomerMenu() {
         <Cart
           cart={cart}
           sellerId={sellerId}
-          day={selectedDay}
+          day={cartDay}
           updateQty={updateQty}
           removeFromCart={removeFromCart}
         />

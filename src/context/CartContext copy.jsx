@@ -4,55 +4,44 @@ import toast from "react-hot-toast";
 const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
+  const [cart, setCart] = useState([]);
+  const [cartDay, setCartDay] = useState(null);
+  const [sellerId, setSellerId] = useState(null);
 
-  // ✅ LOAD DIRECTLY FROM LOCALSTORAGE (SAFE WAY)
-  const [cart, setCart] = useState(() => {
-    const stored = localStorage.getItem("cart");
-    return stored ? JSON.parse(stored) : [];
-  });
+  /* 🔥 LOAD FROM LOCALSTORAGE */
+  useEffect(() => {
+    const storedCart = localStorage.getItem("cart");
+    const storedDay = localStorage.getItem("cartDay");
+    const storedSeller = localStorage.getItem("sellerId");
 
-  const [cartDay, setCartDay] = useState(() => {
-    return localStorage.getItem("cartDay") || null;
-  });
-
-  const [sellerId, setSellerId] = useState(() => {
-    return localStorage.getItem("sellerId") || null;
-  });
+    if (storedCart) setCart(JSON.parse(storedCart));
+    if (storedDay) setCartDay(storedDay);
+    if (storedSeller) setSellerId(storedSeller);
+  }, []);
 
   /* 🔥 SAVE TO LOCALSTORAGE */
   useEffect(() => {
     localStorage.setItem("cart", JSON.stringify(cart));
-  }, [cart]);
-
-  useEffect(() => {
-    if (cartDay) {
-      localStorage.setItem("cartDay", cartDay);
-    } else {
-      localStorage.removeItem("cartDay");
-    }
-  }, [cartDay]);
-
-  useEffect(() => {
-    if (sellerId) {
-      localStorage.setItem("sellerId", sellerId);
-    } else {
-      localStorage.removeItem("sellerId");
-    }
-  }, [sellerId]);
+    localStorage.setItem("cartDay", cartDay || "");
+    localStorage.setItem("sellerId", sellerId || "");
+  }, [cart, cartDay, sellerId]);
 
   /* ================= ADD TO CART ================= */
   const addToCart = (item, selectedDay, seller) => {
 
+    // ❌ Different seller protection
     if (sellerId && sellerId !== seller) {
       toast.error("❌ You can order from one kitchen at a time");
       return;
     }
 
+    // ❌ Different day protection
     if (cartDay && cartDay !== selectedDay) {
       toast.error("❌ Dish should be of same day");
       return;
     }
 
+    // 🔒 Lock seller + day
     if (!sellerId) setSellerId(seller);
     if (!cartDay) setCartDay(selectedDay);
 
@@ -73,7 +62,7 @@ export const CartProvider = ({ children }) => {
         ...cart,
         {
           ...item,
-          seller_id: seller,
+          seller_id: seller, // 🔥 IMPORTANT
           quantity: 1,
         },
       ]);

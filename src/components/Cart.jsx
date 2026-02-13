@@ -44,6 +44,7 @@ export default function Cart({
   const [placing, setPlacing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [partialAmount, setPartialAmount] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const total = cart.reduce(
     (sum, i) => sum + Number(i.price) * i.quantity,
@@ -119,6 +120,7 @@ export default function Cart({
     }
 
     try {
+      setProcessingPayment(true);
       const orderRes = await api.post("/orders/razorpay/create/", {
         amount: amountToPay,
       });
@@ -147,7 +149,16 @@ export default function Cart({
                 quantity: i.quantity,
               })),
             });
-            navigate(`/order/confirmation/${res.data.order_id}`);
+            setProcessingPayment(false);
+
+            // ✅ SHOW SUCCESS ANIMATION
+            setShowSuccess(true);
+
+            // ✅ WAIT BEFORE NAVIGATE
+            setTimeout(() => {
+              navigate(`/order/confirmation/${res.data.order_id}`);
+            }, 1500);
+            // navigate(`/order/confirmation/${res.data.order_id}`);
           } catch {
             setProcessingPayment(false);
             toast.error("Order creation failed after payment");
@@ -296,8 +307,10 @@ export default function Cart({
           />
         )}
       </div>
+        {processingPayment && <PaymentLoader />}
+        {showSuccess && <PaymentSuccessAnimation />}
 
-      {processingPayment && <PaymentLoader />}
+      {/* {processingPayment && <PaymentLoader />} */}
     </>
   );
 }
