@@ -118,12 +118,12 @@ export default function OrderConfirmation() {
             My Orders
           </button>
 
-          <button
+          {/* <button
             onClick={() => downloadInvoice(order.id)}
             className="flex-1 bg-green-600 text-white py-2 rounded"
           >
             Download Invoice
-          </button>
+          </button> */}
 
           <button
             onClick={() => navigate("/customer/dashboard")}
