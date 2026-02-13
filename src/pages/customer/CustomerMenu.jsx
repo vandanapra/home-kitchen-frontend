@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import toast from "react-hot-toast";
 import api from "../../api/axios";
 import Cart from "../../components/Cart";
+import { useCart } from "../../context/CartContext";
 
 const DAYS = [
   "MONDAY",
@@ -23,13 +23,20 @@ export default function CustomerMenu() {
 
   const [selectedDay, setSelectedDay] = useState(today);
   const [items, setItems] = useState([]);
-  const [cart, setCart] = useState([]);
-  const [cartDay, setCartDay] = useState(null); // 🔥 NEW
   const [message, setMessage] = useState("");
   const [kitchenName, setKitchenName] = useState("");
 
+  const {
+    cart,
+    cartDay,
+    addToCart,
+    updateQty,
+    removeFromCart,
+  } = useCart();
+
   /* ================= FETCH MENU ================= */
   useEffect(() => {
+    if (!sellerId) return;
     fetchMenu(selectedDay);
   }, [sellerId, selectedDay]);
 
@@ -39,7 +46,7 @@ export default function CustomerMenu() {
         `/seller/customer/menu/${sellerId}/?day=${day}`
       );
 
-      if (res.data.items && res.data.items.length > 0) {
+      if (res.data.items?.length > 0) {
         setItems(res.data.items);
         setMessage("");
       } else {
@@ -52,83 +59,31 @@ export default function CustomerMenu() {
     }
   };
 
-  /* ================= ADD TO CART (FIXED) ================= */
-  const addToCart = (item) => {
-    // ❌ Prevent different day items
-    if (cartDay && cartDay !== selectedDay) {
-      toast.error("❌ Dish should be of same day");
-      return;
-    }
-
-    // 🔒 Lock cart day on first add
-    if (!cartDay) {
-      setCartDay(selectedDay);
-    }
-
-    const exists = cart.find(
-      (i) => i.menu_item_id === item.id
+  /* ================= ADD TO CART ================= */
+  const handleAddToCart = (item) => {
+    addToCart(
+      {
+        menu_item_id: item.id,
+        name: item.name,
+        price: item.price,
+      },
+      selectedDay,
+      sellerId
     );
-
-    if (exists) {
-      setCart(
-        cart.map((i) =>
-          i.menu_item_id === item.id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i
-        )
-      );
-    } else {
-      setCart([
-        ...cart,
-        {
-          menu_item_id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: 1,
-        },
-      ]);
-    }
   };
 
+  /* ================= ITEM QTY ================= */
   const getItemQty = (itemId) => {
-  const found = cart.find(
-    (i) => i.menu_item_id === itemId
-  );
-  return found ? found.quantity : 0;
-};
-
-
-
-  /* ================= REMOVE FROM CART ================= */
-  const removeFromCart = (id) => {
-    const updatedCart = cart.filter(
-      (i) => i.menu_item_id !== id
+    const found = cart.find(
+      (i) => i.menu_item_id === itemId
     );
-    setCart(updatedCart);
-
-    // 🔓 Unlock day if cart empty
-    if (updatedCart.length === 0) {
-      setCartDay(null);
-    }
-  };
-
-  /* ================= UPDATE QTY ================= */
-  const updateQty = (id, qty) => {
-    if (qty <= 0) {
-      removeFromCart(id);
-    } else {
-      setCart(
-        cart.map((i) =>
-          i.menu_item_id === id
-            ? { ...i, quantity: qty }
-            : i
-        )
-      );
-    }
+    return found ? found.quantity : 0;
   };
 
   /* ================= FETCH SELLER ================= */
   useEffect(() => {
+    if (!sellerId) return;
+
     const fetchSellerDetails = async () => {
       try {
         const res = await api.get(
@@ -139,6 +94,7 @@ export default function CustomerMenu() {
         console.error("Failed to load seller details");
       }
     };
+
     fetchSellerDetails();
   }, [sellerId]);
 
@@ -159,7 +115,6 @@ export default function CustomerMenu() {
               🍽 {kitchenName || "Kitchen"} Menu
             </h2>
 
-            {/* DAY DROPDOWN */}
             <select
               value={selectedDay}
               onChange={(e) => setSelectedDay(e.target.value)}
@@ -173,7 +128,7 @@ export default function CustomerMenu() {
             </select>
           </div>
 
-          {/* 🔒 Cart Day Info */}
+          {/* 🔒 SHOW LOCKED DAY */}
           {cartDay && (
             <p className="text-xs text-gray-500 mb-3">
               🧾 Cart locked for: <strong>{cartDay}</strong>
@@ -198,54 +153,51 @@ export default function CustomerMenu() {
               )}
 
               <div>
-                <h3 className="font-semibold">
-                  {item.name}
-                </h3>
+                <h3 className="font-semibold">{item.name}</h3>
                 <p className="text-sm text-gray-600">
                   {item.description}
                 </p>
-                <p className="font-bold">
-                  ₹{item.price}
-                </p>
+                <p className="font-bold">₹{item.price}</p>
               </div>
 
-
-              <div>
-                {getItemQty(item.id) === 0 ? (
+              {getItemQty(item.id) === 0 ? (
+                <button
+                  onClick={() => handleAddToCart(item)}
+                  className="bg-black text-white px-4 py-1 rounded"
+                >
+                  Add +
+                </button>
+              ) : (
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => addToCart(item)}
-                    className="bg-black text-white px-4 py-1 rounded"
+                    onClick={() =>
+                      updateQty(
+                        item.id,
+                        getItemQty(item.id) - 1
+                      )
+                    }
+                    className="bg-gray-200 px-3 py-1 rounded text-lg"
                   >
-                    Add +
+                    −
                   </button>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() =>
-                        updateQty(item.id, getItemQty(item.id) - 1)
-                      }
-                      className="bg-gray-200 px-3 py-1 rounded text-lg"
-                    >
-                      −
-                    </button>
 
-                    <span className="font-semibold">
-                      {getItemQty(item.id)}
-                    </span>
+                  <span className="font-semibold">
+                    {getItemQty(item.id)}
+                  </span>
 
-                    <button
-                      onClick={() =>
-                        updateQty(item.id, getItemQty(item.id) + 1)
-                      }
-                      className="bg-green-600 text-white px-3 py-1 rounded text-lg"
-                    >
-                      +
-                    </button>
-                  </div>
-                )}
-              </div>
-
-
+                  <button
+                    onClick={() =>
+                      updateQty(
+                        item.id,
+                        getItemQty(item.id) + 1
+                      )
+                    }
+                    className="bg-green-600 text-white px-3 py-1 rounded text-lg"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

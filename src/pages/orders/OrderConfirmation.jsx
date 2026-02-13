@@ -2,12 +2,16 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import { useCart } from "../../context/CartContext"; // 🔥 IMPORTANT
 
 export default function OrderConfirmation() {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const { clearCart } = useCart(); // 🔥 get clearCart
+
   const [order, setOrder] = useState(null);
 
+  /* ================= FETCH ORDER ================= */
   useEffect(() => {
     fetchOrder();
   }, []);
@@ -16,48 +20,60 @@ export default function OrderConfirmation() {
     try {
       const res = await api.get(`/orders/orders/${orderId}/`);
       setOrder(res.data);
-    } catch {
+
+      // 🔥 CLEAR CART ONLY AFTER ORDER IS SUCCESSFULLY FETCHED
+      clearCart();
+
+    } catch (err) {
+      console.error(err);
       navigate("/customer/dashboard");
     }
   };
 
+  /* ================= DOWNLOAD INVOICE ================= */
+  const downloadInvoice = async (orderId) => {
+    try {
+      const res = await api.get(
+        `/orders/invoice/${orderId}/`,
+        {
+          responseType: "blob",
+        }
+      );
 
-    const downloadInvoice = async (orderId) => {
-  try {
-    const res = await api.get(
-      `/orders/invoice/${orderId}/`,
-      {
-        responseType: "blob", // 🔥 IMPORTANT
-      }
-    );
-    const blob = new Blob([res.data], {
-      type: "application/pdf",
-    });
-    const url = window.URL.createObjectURL(blob);
+      const blob = new Blob([res.data], {
+        type: "application/pdf",
+      });
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `invoice_${orderId}.pdf`;
+      const url = window.URL.createObjectURL(blob);
 
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url)
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to download invoice");
-  }
-};
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `invoice_${orderId}.pdf`;
 
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to download invoice");
+    }
+  };
 
   if (!order) {
-    return <p className="p-6">Loading order details...</p>;
+    return (
+      <p className="p-6 text-center text-gray-600">
+        Loading order details...
+      </p>
+    );
   }
 
   return (
-    <div 
-    className="min-h-screen bg-cover flex justify-center bg-center items-center"
-    style={{
+    <div
+      className="min-h-screen bg-cover flex justify-center bg-center items-center"
+      style={{
         backgroundImage:
           "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
       }}
@@ -82,6 +98,7 @@ export default function OrderConfirmation() {
         <hr className="my-4" />
 
         <h4 className="font-semibold mb-2">📦 Items</h4>
+
         {order.items.map((i) => (
           <p key={i.id} className="text-sm">
             {i.item_name} × {i.quantity}
@@ -93,6 +110,7 @@ export default function OrderConfirmation() {
         </p>
 
         <div className="flex gap-3 mt-6">
+
           <button
             onClick={() => navigate("/my-orders")}
             className="flex-1 bg-blue-600 text-white py-2 rounded"
@@ -100,12 +118,12 @@ export default function OrderConfirmation() {
             My Orders
           </button>
 
-          {/* <button
+          <button
             onClick={() => downloadInvoice(order.id)}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+            className="flex-1 bg-green-600 text-white py-2 rounded"
           >
-            📄 Download Invoice
-          </button> */}
+            Download Invoice
+          </button>
 
           <button
             onClick={() => navigate("/customer/dashboard")}
@@ -113,6 +131,7 @@ export default function OrderConfirmation() {
           >
             Back to Home
           </button>
+
         </div>
 
       </div>

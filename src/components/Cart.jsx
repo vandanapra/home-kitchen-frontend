@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import api from "../api/axios";
 import AddressModal from "./AddressModal";
 import { useNavigate } from "react-router-dom";
-import PaymentSuccessAnimation from "./PaymentSuccessAnimation";
-/* ================= LOAD RAZORPAY ================= */
+
+/* ================= RAZORPAY LOADER ================= */
 const loadRazorpay = () => {
   return new Promise((resolve) => {
     const script = document.createElement("script");
@@ -15,9 +15,9 @@ const loadRazorpay = () => {
   });
 };
 
-/* ================= PAYMENT LOADER ================= */
+/* ================= FULL SCREEN LOADER ================= */
 const PaymentLoader = () => (
-  <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
     <div className="bg-white rounded-xl p-6 text-center w-72 shadow-xl">
       <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-green-600 mx-auto mb-4"></div>
       <h3 className="font-semibold text-lg">
@@ -40,48 +40,51 @@ export default function Cart({
   const navigate = useNavigate();
 
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState(null);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [placing, setPlacing] = useState(false);
-  const [processingPayment, setProcessingPayment] = useState(false); // 🔥 NEW
   const [paymentMethod, setPaymentMethod] = useState("COD");
   const [partialAmount, setPartialAmount] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+
   const total = cart.reduce(
     (sum, i) => sum + Number(i.price) * i.quantity,
     0
   );
 
-  /* ================= PLACE ORDER (UNCHANGED NAME) ================= */
+  /* ================= PLACE ORDER ================= */
   const placeOrder = async (address) => {
     if (!day) {
       toast.error("Please select a day");
+      setProcessingPayment(false);
       return;
     }
 
     if (cart.length === 0) {
       toast.error("Cart is empty");
+      setProcessingPayment(false);
       return;
     }
 
     if (!address) {
       toast.error("Please select delivery address");
+      setProcessingPayment(false);
       return;
     }
 
     if (paymentMethod === "PARTIAL") {
       if (!partialAmount || Number(partialAmount) <= 0) {
         toast.error("Enter valid partial amount");
+        setProcessingPayment(false);
         return;
       }
       if (Number(partialAmount) >= total) {
         toast.error("Partial amount must be less than total");
+        setProcessingPayment(false);
         return;
       }
     }
 
     /* ================= COD FLOW ================= */
     if (paymentMethod === "COD") {
-      setPlacing(true);
       try {
         const res = await api.post("/orders/place/", {
           seller_id: sellerId,
@@ -94,18 +97,15 @@ export default function Cart({
             quantity: i.quantity,
           })),
         });
-
-        toast.success("Order placed successfully 🎉");
         navigate(`/order/confirmation/${res.data.order_id}`);
       } catch (err) {
+        setProcessingPayment(false);
         toast.error(err.response?.data?.message || "Order failed");
-      } finally {
-        setPlacing(false);
       }
       return;
     }
 
-    /* ================= RAZORPAY FLOW ================= */
+    /* ================= ONLINE / PARTIAL ================= */
     const amountToPay =
       paymentMethod === "PARTIAL"
         ? Number(partialAmount)
@@ -113,6 +113,7 @@ export default function Cart({
 
     const loaded = await loadRazorpay();
     if (!loaded) {
+      setProcessingPayment(false);
       toast.error("Razorpay SDK failed to load");
       return;
     }
@@ -132,8 +133,6 @@ export default function Cart({
 
         handler: async (response) => {
           try {
-            setProcessingPayment(true); // 🔥 START LOADER
-
             const res = await api.post("/orders/place/", {
               seller_id: sellerId,
               day,
@@ -148,9 +147,6 @@ export default function Cart({
                 quantity: i.quantity,
               })),
             });
-            // 🔥 SHOW TICK ANIMATION
-            setShowSuccess(true);
-            // toast.success("Payment successful 🎉");
             navigate(`/order/confirmation/${res.data.order_id}`);
           } catch {
             setProcessingPayment(false);
@@ -166,13 +162,16 @@ export default function Cart({
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch {
+      setProcessingPayment(false);
       toast.error("Payment initiation failed");
     }
   };
 
-  /* ================= ADDRESS FLOW ================= */
-  const handlePlaceClick = () => {
-    setShowAddressModal(true);
+  /* ================= ADDRESS CONFIRM ================= */
+  const handleAddressConfirm = (addr) => {
+    setShowAddressModal(false);
+    setProcessingPayment(true); // 🔥 LOADER START HERE
+    placeOrder(addr);
   };
 
   return (
@@ -281,13 +280,11 @@ export default function Cart({
             </div>
 
             <button
-              onClick={handlePlaceClick}
-              disabled={placing || processingPayment}
+              onClick={() => setShowAddressModal(true)}
+              disabled={processingPayment}
               className="w-full bg-green-600 text-white py-2 rounded mt-2 hover:bg-green-700 disabled:bg-gray-400"
             >
-              {processingPayment
-                ? "Processing payment..."
-                : "Place Order"}
+              Place Order
             </button>
           </>
         )}
@@ -295,20 +292,12 @@ export default function Cart({
         {showAddressModal && (
           <AddressModal
             onClose={() => setShowAddressModal(false)}
-            onConfirm={(addr) => {
-              setSelectedAddress(addr);
-              setShowAddressModal(false);
-              placeOrder(addr);
-            }}
+            onConfirm={handleAddressConfirm}
           />
         )}
       </div>
 
-      {/* 🔥 PAYMENT LOADER */}
       {processingPayment && <PaymentLoader />}
-
-      {showSuccess && <PaymentSuccessAnimation />}
-
     </>
   );
 }

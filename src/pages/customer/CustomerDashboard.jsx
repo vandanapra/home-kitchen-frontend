@@ -1,14 +1,21 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useCart } from "../../context/CartContext";
+import toast from "react-hot-toast";
 
 export default function CustomerHome() {
   const navigate = useNavigate();
+  const { cart, sellerId } = useCart();
 
   const [sellers, setSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+
+  const cartCount = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,12 +43,20 @@ export default function CustomerHome() {
     navigate("/");
   };
 
+  const handleCartClick = () => {
+    if (!sellerId) {
+      toast.error("🛒 Cart is empty");
+      return;
+    }
+
+    navigate(`/menu/${sellerId}`);
+  };
+
   if (loading) {
     return <p className="p-6">Loading dashboard...</p>;
   }
 
   return (
-    /* 🌄 BACKGROUND */
     <div
       className="min-h-screen bg-cover bg-center"
       style={{
@@ -49,14 +64,28 @@ export default function CustomerHome() {
           "url('https://images.unsplash.com/photo-1606787366850-de6330128bfc')",
       }}
     >
-      {/* DARK OVERLAY */}
       <div className="min-h-screen bg-black/40 p-6">
+
         {/* ================= PROFILE CARD ================= */}
         {profile && (
           <div className="relative bg-white/55 backdrop-blur rounded-2xl shadow-xl p-6 mb-8 max-w-6xl mx-auto">
-            
+
             {/* 🔝 TOP RIGHT BUTTONS */}
-            <div className="absolute top-6 right-6 flex gap-3">
+            <div className="absolute top-6 right-6 flex gap-3 items-center">
+
+              {/* 🛒 CART BUTTON */}
+              <button
+                onClick={handleCartClick}
+                className="relative bg-white text-black px-4 py-2 rounded-lg shadow"
+              >
+                🛒 Cart
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+
               <button
                 onClick={() => navigate("/my-orders")}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
@@ -141,6 +170,7 @@ export default function CustomerHome() {
             ))}
           </div>
         </div>
+
       </div>
     </div>
   );
