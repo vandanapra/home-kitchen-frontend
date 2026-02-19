@@ -308,7 +308,7 @@ export default function Cart({
         )}
       </div>
         {processingPayment && <PaymentLoader />}
-        {showSuccess && <PaymentSuccessAnimation />}
+        {/* {showSuccess && <PaymentSuccessAnimation />} */}
 
       {/* {processingPayment && <PaymentLoader />} */}
     </>
