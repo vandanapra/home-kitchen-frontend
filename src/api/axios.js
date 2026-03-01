@@ -2,7 +2,7 @@ import axios from "axios";
 import { logout } from "../services/auth"; // ya jahan tumne logout rakha ho
 import { toast } from "react-hot-toast";
 const api = axios.create({
-  baseURL: "http://13.233.98.184:8000/api/",
+  baseURL: "https://api-kitchen.vamsmechatronica.in/api/",
   headers: {
     "Content-Type": "application/json",
   },
